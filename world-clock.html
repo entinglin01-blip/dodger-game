@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>世界時鐘 - Digital Clock</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', 'Courier New', monospace;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            max-width: 1000px;
+            width: 100%;
+        }
+
+        h1 {
+            text-align: center;
+            color: #667eea;
+            margin-bottom: 40px;
+            font-size: 32px;
+        }
+
+        .clock-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .clock-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 15px;
+            padding: 20px;
+            color: white;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            transition: transform 0.3s ease;
+        }
+
+        .clock-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .clock-card.active {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        .timezone-name {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            letter-spacing: 1px;
+        }
+
+        .time-display {
+            font-size: 36px;
+            font-weight: bold;
+            font-family: 'Courier New', monospace;
+            margin: 15px 0;
+            letter-spacing: 2px;
+        }
+
+        .date-display {
+            font-size: 14px;
+            opacity: 0.9;
+            margin-bottom: 10px;
+        }
+
+        .day-display {
+            font-size: 12px;
+            opacity: 0.8;
+        }
+
+        .controls {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        button {
+            padding: 10px 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            transition: transform 0.2s;
+        }
+
+        button:hover {
+            transform: scale(1.05);
+        }
+
+        button:active {
+            transform: scale(0.95);
+        }
+
+        .format-toggle {
+            display: flex;
+            gap: 5px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .format-btn {
+            padding: 8px 15px;
+            font-size: 12px;
+        }
+
+        .format-btn.active {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        .timezone-info {
+            background: #f0f4ff;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+            border-left: 5px solid #667eea;
+        }
+
+        .timezone-info h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .timezone-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+        }
+
+        .timezone-item {
+            background: white;
+            padding: 8px;
+            border-radius: 5px;
+            font-size: 12px;
+            color: #333;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .timezone-item:hover {
+            border-color: #667eea;
+            background: #f9f9f9;
+        }
+
+        .timezone-item.selected {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+
+            h1 {
+                font-size: 24px;
+                margin-bottom: 20px;
+            }
+
+            .time-display {
+                font-size: 28px;
+            }
+
+            .clock-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🌍 世界時鐘</h1>
+        
+        <div class="controls">
+            <div class="btn-group">
+                <button onclick="addTimezone()">➕ 新增時區</button>
+                <button onclick="clearAllTimezones()">🗑️ 清空全部</button>
+                <button onclick="addDefaultTimezones()">⚡ 快速設置</button>
+            </div>
+            
+            <div class="format-toggle">
+                <button class="format-btn active" onclick="setFormat('12h')">12 小時制</button>
+                <button class="format-btn" onclick="setFormat('24h')">24 小時制</button>
+            </div>
+        </div>
+
+        <div class="clock-grid" id="clockGrid"></div>
+
+        <div class="timezone-info">
+            <h3>📍 選擇時區</h3>
+            <div class="timezone-list" id="timezoneList"></div>
+        </div>
+    </div>
+
+    <script>
+        // 常見時區列表
+        const timezones = [
+            { name: '倫敦', offset: 'Europe/London', emoji: '🇬🇧' },
+            { name: '紐約', offset: 'America/New_York', emoji: '🇺🇸' },
+            { name: '東京', offset: 'Asia/Tokyo', emoji: '🇯🇵' },
+            { name: '香港', offset: 'Asia/Hong_Kong', emoji: '🇭🇰' },
+            { name: '台北', offset: 'Asia/Taipei', emoji: '🇹🇼' },
+            { name: '新加坡', offset: 'Asia/Singapore', emoji: '🇸🇬' },
+            { name: '曼谷', offset: 'Asia/Bangkok', emoji: '🇹🇭' },
+            { name: '杜拜', offset: 'Asia/Dubai', emoji: '🇦🇪' },
+            { name: '北京', offset: 'Asia/Shanghai', emoji: '🇨🇳' },
+            { name: '德里', offset: 'Asia/Kolkata', emoji: '🇮🇳' },
+            { name: '莫斯科', offset: 'Europe/Moscow', emoji: '🇷🇺' },
+            { name: '巴黎', offset: 'Europe/Paris', emoji: '🇫🇷' },
+            { name: '雪梨', offset: 'Australia/Sydney', emoji: '🇦🇺' },
+            { name: '多倫多', offset: 'America/Toronto', emoji: '🇨🇦' },
+            { name: '洛杉磯', offset: 'America/Los_Angeles', emoji: '🇺🇸' },
+            { name: '聖保羅', offset: 'America/Sao_Paulo', emoji: '🇧🇷' },
+            { name: '杰加達', offset: 'Asia/Jakarta', emoji: '🇮🇩' },
+            { name: '首爾', offset: 'Asia/Seoul', emoji: '🇰🇷' },
+        ];
+
+        let selectedTimezones = [];
+        let timeFormat = '12h';
+
+        // 初始化時區列表
+        function initTimezoneList() {
+            const list = document.getElementById('timezoneList');
+            list.innerHTML = '';
+            
+            timezones.forEach(tz => {
+                const item = document.createElement('div');
+                item.className = 'timezone-item';
+                if (selectedTimezones.find(s => s.offset === tz.offset)) {
+                    item.classList.add('selected');
+                }
+                item.textContent = `${tz.emoji} ${tz.name}`;
+                item.onclick = () => toggleTimezone(tz);
+                list.appendChild(item);
+            });
+        }
+
+        // 切換時區選擇
+        function toggleTimezone(tz) {
+            const index = selectedTimezones.findIndex(s => s.offset === tz.offset);
+            if (index > -1) {
+                selectedTimezones.splice(index, 1);
+            } else {
+                selectedTimezones.push(tz);
+            }
+            updateClocks();
+            initTimezoneList();
+            localStorage.setItem('selectedTimezones', JSON.stringify(selectedTimezones));
+        }
+
+        // 新增時區
+        function addTimezone() {
+            const tz = timezones[Math.floor(Math.random() * timezones.length)];
+            if (!selectedTimezones.find(s => s.offset === tz.offset)) {
+                selectedTimezones.push(tz);
+                updateClocks();
+                initTimezoneList();
+                localStorage.setItem('selectedTimezones', JSON.stringify(selectedTimezones));
+            }
+        }
+
+        // 快速設置（添加主要時區）
+        function addDefaultTimezones() {
+            selectedTimezones = [
+                { name: '台北', offset: 'Asia/Taipei', emoji: '🇹🇼' },
+                { name: '東京', offset: 'Asia/Tokyo', emoji: '🇯🇵' },
+                { name: '紐約', offset: 'America/New_York', emoji: '🇺🇸' },
+                { name: '倫敦', offset: 'Europe/London', emoji: '🇬🇧' }
+            ];
+            updateClocks();
+            initTimezoneList();
+            localStorage.setItem('selectedTimezones', JSON.stringify(selectedTimezones));
+        }
+
+        // 清空全部
+        function clearAllTimezones() {
+            if (confirm('確定要清空所有時區嗎？')) {
+                selectedTimezones = [];
+                updateClocks();
+                initTimezoneList();
+                localStorage.removeItem('selectedTimezones');
+            }
+        }
+
+        // 設置時間格式
+        function setFormat(format) {
+            timeFormat = format;
+            document.querySelectorAll('.format-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            localStorage.setItem('timeFormat', format);
+        }
+
+        // 格式化時間
+        function formatTime(date) {
+            const hours = String(date.getHours()).padStart(2, '0');
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            const seconds = String(date.getSeconds()).padStart(2, '0');
+
+            if (timeFormat === '24h') {
+                return `${hours}:${minutes}:${seconds}`;
+            } else {
+                let hour = date.getHours();
+                const ampm = hour >= 12 ? '下午' : '上午';
+                hour = hour % 12 || 12;
+                return `${String(hour).padStart(2, '0')}:${minutes}:${seconds} ${ampm}`;
+            }
+        }
+
+        // 格式化日期
+        function formatDate(date) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
+        // 獲取星期幾
+        function getDayName(date) {
+            const days = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
+            return days[date.getDay()];
+        }
+
+        // 更新時鐘
+        function updateClocks() {
+            const grid = document.getElementById('clockGrid');
+            grid.innerHTML = '';
+
+            if (selectedTimezones.length === 0) {
+                grid.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: #999;">點選下方時區新增時鐘 ➕</p>';
+                return;
+            }
+
+            selectedTimezones.forEach((tz, index) => {
+                const card = document.createElement('div');
+                card.className = 'clock-card';
+                if (index === 0) card.classList.add('active');
+
+                try {
+                    const date = new Date(new Date().toLocaleString('en-US', { timeZone: tz.offset }));
+                    
+                    card.innerHTML = `
+                        <div class="timezone-name">${tz.emoji} ${tz.name}</div>
+                        <div class="time-display">${formatTime(date)}</div>
+                        <div class="date-display">${formatDate(date)}</div>
+                        <div class="day-display">${getDayName(date)}</div>
+                    `;
+                } catch (e) {
+                    card.innerHTML = `
+                        <div class="timezone-name">${tz.emoji} ${tz.name}</div>
+                        <div class="time-display">--:--:--</div>
+                        <div class="date-display">時區無效</div>
+                    `;
+                }
+
+                grid.appendChild(card);
+            });
+        }
+
+        // 載入本地儲存
+        function loadSettings() {
+            const saved = localStorage.getItem('selectedTimezones');
+            if (saved) {
+                selectedTimezones = JSON.parse(saved);
+            }
+
+            const savedFormat = localStorage.getItem('timeFormat');
+            if (savedFormat) {
+                timeFormat = savedFormat;
+                document.querySelectorAll('.format-btn').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+                document.querySelector(`.format-btn[onclick="setFormat('${savedFormat}')"]`).classList.add('active');
+            }
+        }
+
+        // 初始化
+        function init() {
+            loadSettings();
+            initTimezoneList();
+            updateClocks();
+            
+            // 每秒更新一次時間
+            setInterval(updateClocks, 1000);
+        }
+
+        // 啟動應用
+        init();
+    </script>
+</body>
+</html>
